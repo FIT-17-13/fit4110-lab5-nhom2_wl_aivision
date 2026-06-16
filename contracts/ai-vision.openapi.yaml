@@ -1,0 +1,435 @@
+openapi: 3.1.0
+info:
+  title: Smart Campus — AI Vision Service (Pair 01)
+  version: 1.0.0
+  description: |
+    Hợp đồng API REST sync giữa Camera Stream (Consumer) và AI Vision (Provider).
+    Service tiếp nhận hình ảnh từ Camera Stream để chạy suy luận AI (nhận diện đối tượng) 
+    và trả về metadata bounding box, class, confidence.
+  contact:
+    name: Nhóm 02 - WL (Nguyễn Văn Vinh)
+    email: vinhnv@example.edu.vn
+servers:
+  - url: http://localhost:4010
+    description: Prism mock server cục bộ cho Lab 02
+  - url: https://api.campus.local
+    description: Môi trường deploy thực tế
+tags:
+  - name: health
+    description: Kiểm tra trạng thái service
+  - name: vision
+    description: Các endpoint xử lý suy luận hình ảnh AI
+security:
+  - bearerAuth: []
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      summary: Kiểm tra trạng thái service
+      description: Endpoint kiểm tra service AI Vision còn hoạt động hay không.
+      tags: [health]
+      security: []
+      responses:
+        '200':
+          description: Service đang hoạt động
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+              examples:
+                ok:
+                  value:
+                    status: ok
+                    service: ai-vision-service
+                    time: '2026-05-19T08:00:00Z'
+
+  /detect:
+    post:
+      operationId: detectImageObjects
+      summary: Phân tích hình ảnh bóc tách đối tượng
+      description: |
+        Camera Stream đẩy ảnh (khi có motion) lên AI Vision để phân tích.
+        Hỗ trợ đa hình (Polymorphism): truyền ảnh qua Base64 hoặc URL.
+      tags: [vision]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImageInput'
+            examples:
+              base64Payload:
+                value:
+                  imageType: BASE64
+                  cameraId: 0196fb3d-4ad7-7d1e-9f49-5d5148d2babc
+                  timestamp: '2026-05-19T08:00:00Z'
+                  base64Data: "iVBORw0KGgoAAAANSUhEUgAA..."
+      responses:
+        '200':
+          description: Phân tích hình ảnh thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetectionResult'
+              examples:
+                successResult:
+                  value:
+                    detectionId: 123e4567-e89b-12d3-a456-426614174000
+                    timestamp: '2026-05-19T08:00:02Z'
+                    status: COMPLETED
+                    processingTimeMs: 150
+                    riskLevel: LOW
+                    objects:
+                      - label: person
+                        confidence: 0.95
+                        boundingBox:
+                          xMin: 0.1
+                          yMin: 0.2
+                          xMax: 0.4
+                          yMax: 0.8
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /detections/{detectionId}:
+    get:
+      operationId: getDetectionById
+      summary: Lấy chi tiết kết quả phân tích cũ
+      description: Tra cứu lại log phân tích AI bằng UUID.
+      tags: [vision]
+      parameters:
+        - name: detectionId
+          in: path
+          required: true
+          description: UUID của lượt phân tích.
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Chi tiết kết quả phân tích
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetectionResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /models/info:
+    get:
+      operationId: getModelInfo
+      summary: Lấy cấu hình model AI hiện tại
+      description: "Lấy thông tin về model đang được deploy (VD: YOLOv8)."
+      tags: [vision]
+      responses:
+        '200':
+          description: Chi tiết cấu hình model
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelInfo'
+              examples:
+                modelData:
+                  value:
+                    modelId: yolov8-campus-v1
+                    name: YOLOv8 Custom Object Detector
+                    version: 1.2.0
+                    supportedClasses: ["person", "car", "motorbike"]
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    HealthStatus:
+      type: object
+      additionalProperties: false
+      required: [status, service, time]
+      properties:
+        status:
+          type: string
+          enum: [ok]
+        service:
+          type: string
+          minLength: 2
+          maxLength: 80
+        time:
+          type: string
+          format: date-time
+
+    # --- SỬA LẠI SCHEMA ĐA HÌNH Ở ĐÂY ĐỂ ÉP PRISM VALIDATE CHẶT CHẼ ---
+# --- SỬA LẠI SCHEMA ĐA HÌNH Ở ĐÂY ĐỂ ÉP PRISM VALIDATE CHẶT CHẼ ---
+    ImageInput:
+      type: object
+      required: [imageType, cameraId, timestamp]
+      discriminator:
+        propertyName: imageType
+        mapping:
+          BASE64: '#/components/schemas/Base64ImagePayload'
+          URL: '#/components/schemas/UrlImagePayload'
+      properties:
+        imageType:
+          type: string
+        cameraId:
+          type: string
+          format: uuid
+        timestamp:
+          type: string
+          format: date-time
+      oneOf:
+        - $ref: '#/components/schemas/Base64ImagePayload'
+        - $ref: '#/components/schemas/UrlImagePayload'
+
+    Base64ImagePayload:
+      type: object
+      additionalProperties: false
+      required: [imageType, cameraId, timestamp, base64Data]
+      properties:
+        imageType:
+          type: string
+          enum: [BASE64]
+        cameraId:
+          type: string
+          format: uuid
+        timestamp:
+          type: string
+          format: date-time
+        base64Data:
+          type: string
+          minLength: 10
+          description: Chuỗi ảnh Base64 (tối đa 5MB)
+
+    UrlImagePayload:
+      type: object
+      additionalProperties: false
+      required: [imageType, cameraId, timestamp, imageUrl]
+      properties:
+        imageType:
+          type: string
+          enum: [URL]
+        cameraId:
+          type: string
+          format: uuid
+        timestamp:
+          type: string
+          format: date-time
+        imageUrl:
+          type: string
+          format: uri
+          description: Đường dẫn tải ảnh tĩnh
+
+    DetectionResult:
+      type: object
+      additionalProperties: false
+      required: [detectionId, timestamp, objects, status]
+      properties:
+        detectionId:
+          type: string
+          format: uuid
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [COMPLETED, FAILED]
+        processingTimeMs:
+          type: integer
+          minimum: 0
+          maximum: 10000
+        riskLevel:
+          type: [string, 'null']
+          enum: [LOW, MEDIUM, HIGH, 'null']
+          description: Đánh giá rủi ro (null nếu không có)
+        objects:
+          type: array
+          minItems: 0
+          maxItems: 200
+          items:
+            $ref: '#/components/schemas/DetectedObject'
+
+    DetectedObject:
+      type: object
+      additionalProperties: false
+      required: [label, confidence, boundingBox]
+      properties:
+        label:
+          type: string
+          minLength: 1
+          maxLength: 50
+        confidence:
+          type: number
+          minimum: 0.0
+          maximum: 1.0
+        boundingBox:
+          $ref: '#/components/schemas/BoundingBox'
+
+    BoundingBox:
+      type: object
+      additionalProperties: false
+      required: [xMin, yMin, xMax, yMax]
+      properties:
+        xMin:
+          type: number
+          minimum: 0.0
+          maximum: 1.0
+        yMin:
+          type: number
+          minimum: 0.0
+          maximum: 1.0
+        xMax:
+          type: number
+          minimum: 0.0
+          maximum: 1.0
+        yMax:
+          type: number
+          minimum: 0.0
+          maximum: 1.0
+
+    ModelInfo:
+      type: object
+      additionalProperties: false
+      required: [modelId, name, version, supportedClasses]
+      properties:
+        modelId:
+          type: string
+        name:
+          type: string
+        version:
+          type: string
+        supportedClasses:
+          type: array
+          items:
+            type: string
+
+    Problem:
+      type: object
+      additionalProperties: false
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+          minLength: 3
+          maxLength: 120
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+        detail:
+          type: [string, 'null']
+          maxLength: 500
+        instance:
+          type: [string, 'null']
+          format: uri
+        errors:
+          type: array
+          minItems: 0
+          maxItems: 50
+          items:
+            type: object
+            additionalProperties: false
+            required: [field, code, message]
+            properties:
+              field:
+                type: string
+                minLength: 1
+                maxLength: 80
+              code:
+                type: string
+                minLength: 2
+                maxLength: 80
+              message:
+                type: string
+                minLength: 3
+                maxLength: 200
+
+  responses:
+    BadRequest:
+      description: Dữ liệu sai định dạng
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://api.campus.local/errors/validation
+            title: Dữ liệu không hợp lệ
+            status: 400
+            detail: Payload không đúng JSON Schema
+            # --- Đã fix lỗi oas3-valid-media-example bằng Absolute URI ---
+            instance: https://api.campus.local/detect 
+            errors:
+              - field: imageType
+                code: ENUM_MISMATCH
+                message: imageType phải là BASE64 hoặc URL
+
+    Unauthorized:
+      description: Thiếu hoặc sai token xác thực
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    NotFound:
+      description: Resource không tồn tại
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    PayloadTooLarge:
+      description: Kích thước ảnh vượt quá giới hạn 5MB
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://api.campus.local/errors/payload-too-large
+            title: Payload Too Large
+            status: 413
+            detail: Kích thước ảnh truyền vào vượt quá 5MB.
+            # --- Đã fix lỗi oas3-valid-media-example bằng Absolute URI ---
+            instance: https://api.campus.local/detect 
+            errors: []
+
+    UnprocessableEntity:
+      description: JSON hợp lệ nhưng chuỗi Base64 bị hỏng, AI không đọc được
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    TooManyRequests:
+      description: Gửi quá nhiều ảnh, vượt khả năng xử lý của GPU
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    InternalServerError:
+      description: Lỗi AI model / GPU crash
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
