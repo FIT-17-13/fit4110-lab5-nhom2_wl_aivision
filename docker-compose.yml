@@ -52,7 +52,10 @@ services:
         condition: service_healthy
     networks:
       - team-internal
+      - class-net
 
 networks:
   team-internal:
     driver: bridge
+  class-net:
+    external: true
