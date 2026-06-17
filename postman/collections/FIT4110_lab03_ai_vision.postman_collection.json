@@ -1,0 +1,370 @@
+{
+  "info": {
+    "_postman_id": "ca510bcf-67c1-4fb3-9380-3253e8b2f8bd",
+    "name": "FIT4110_lab03_ai_vision",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "34945284"
+  },
+  "item": [
+    {
+      "name": "01_Functional",
+      "item": [
+        {
+          "name": "New Request",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () { pm.response.to.have.status(200); });\r",
+                  "pm.test(\"Trạng thái dịch vụ trả về UP ổn định\", function () {\r",
+                  "    pm.expect(pm.response.json().status).to.eql(\"ok\");\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "New Request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () { pm.response.to.have.status(200); });\r",
+                  "pm.test(\"Có ID phân tích trả về từ mô hình AI\", function () {\r",
+                  "    pm.expect(pm.response.json()).to.have.property(\"detectionId\");\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"imageType\": \"URL\",\n  \"cameraId\": \"123e4567-e89b-12d3-a456-426614174000\",\n  \"timestamp\": \"2026-05-19T08:00:00Z\",\n  \"imageUrl\": \"https://example.com/image.jpg\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/detect",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "detect"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "02_Auth",
+      "item": [
+        {
+          "name": "New Request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Hướng dẫn ghi rõ không ép lỗi bằng Prefer header mà phải để server chặn thật\r",
+                  "pm.test(\"Request khuyết thiếu Token phải bị chặn 401 Unauthorized\", function () {\r",
+                  "    pm.expect([401, 403]).to.include(pm.response.code);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/models/info",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "models",
+                "info"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "03_Negative",
+      "item": [
+        {
+          "name": "New Request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Thiếu thuộc tính bắt buộc phải trả về lỗi Client\", function () {\r",
+                  "    pm.expect([400, 422]).to.include(pm.response.code);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"imageType\": \"URL\",\n  \"timestamp\": \"2026-05-19T08:00:00Z\",\n  \"imageUrl\": \"https://example.com/image.jpg\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/detect",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "detect"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "04_Boundary_Reliability",
+      "item": [
+        {
+          "name": "New Request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Dữ liệu vượt biên nghiệp vụ AI phải được kiểm soát chặt chẽ\", function () {\r",
+                  "    pm.expect([200, 400, 422]).to.include(pm.response.code);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"imageType\": \"URL\",\n  \"cameraId\": \"123e4567-e89b-12d3-a456-426614174000\",\n  \"timestamp\": \"9999-99-99T99:99:99Z\", \n  \"imageUrl\": \"https://example.com/image.jpg\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/detect",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "detect"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "05_Consumer_side_Smoke",
+      "item": [
+        {
+          "name": "New Request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Kết nối thành công sang API mock của dịch vụ đối tác\", function () {\r",
+                  "    pm.expect([200, 201, 204]).to.include(pm.response.code);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"detectionId\": \"123e4567-e89b-12d3-a456-426614174000\",\r\n  \"riskLevel\": \"HIGH\",\r\n  \"timestamp\": \"2026-05-19T08:00:02Z\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{cameraStreamMockUrl}}/callbacks/alerts",
+              "host": [
+                "{{cameraStreamMockUrl}}"
+              ],
+              "path": [
+                "callbacks",
+                "alerts"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "06_Local_only_NonFunctional",
+      "item": [
+        {
+          "name": "New Request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.environment.get(\"env\") === \"local\") {\r",
+                  "    pm.test(\"Độ trễ xử lý suy luận (Latency) phải đáp ứng SLA dưới 1000ms\", function () {\r",
+                  "        pm.expect(pm.response.responseTime).to.be.below(1000);\r",
+                  "    });\r",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

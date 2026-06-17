@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="FIT4110_lab03_ai_vision" tests="7" time="1.029">
+  <testsuite name="01_Functional / New Request" id="02f716b0-d97f-4221-ba02-fed9e70791d3" timestamp="2026-06-17T17:45:22.817Z" tests="2" failures="0" errors="0" time="0.032">
+    <testcase name="Status code is 200 OK" time="0.032" classname="01FunctionalNewRequest"/>
+    <testcase name="Trạng thái dịch vụ trả về UP ổn định" time="0.032" classname="01FunctionalNewRequest"/>
+  </testsuite>
+  <testsuite name="01_Functional / New Request" id="c11646c0-6831-4037-9cba-339bae0c9b06" timestamp="2026-06-17T17:45:22.817Z" tests="2" failures="0" errors="0" time="0.560">
+    <testcase name="Status code is 200 OK" time="0.560" classname="01FunctionalNewRequest"/>
+    <testcase name="Có ID phân tích trả về từ mô hình AI" time="0.560" classname="01FunctionalNewRequest"/>
+  </testsuite>
+  <testsuite name="02_Auth / New Request" id="dec50445-85a0-46dc-b43d-14b5ed6f4d6e" timestamp="2026-06-17T17:45:22.817Z" tests="1" failures="0" errors="0" time="0.006">
+    <testcase name="Request khuyết thiếu Token phải bị chặn 401 Unauthorized" time="0.006" classname="02AuthNewRequest"/>
+  </testsuite>
+  <testsuite name="03_Negative / New Request" id="e03341f1-6294-4e44-bbc5-3a4f7e2f47b4" timestamp="2026-06-17T17:45:22.817Z" tests="1" failures="0" errors="0" time="0.006">
+    <testcase name="Thiếu thuộc tính bắt buộc phải trả về lỗi Client" time="0.006" classname="03NegativeNewRequest"/>
+  </testsuite>
+  <testsuite name="04_Boundary_Reliability / New Request" id="012ec322-e54b-4bc0-aee1-ec00dafdbcf1" timestamp="2026-06-17T17:45:22.817Z" tests="1" failures="0" errors="0" time="0.418">
+    <testcase name="Dữ liệu vượt biên nghiệp vụ AI phải được kiểm soát chặt chẽ" time="0.418" classname="04BoundaryReliabilityNewRequest"/>
+  </testsuite>
+  <testsuite name="05_Consumer_side_Smoke / New Request" id="17875196-effa-4961-8514-80e3a9037e5b" timestamp="2026-06-17T17:45:22.817Z" tests="1" failures="0" errors="0" time="0.004">
+    <testcase name="Kết nối thành công sang API mock của dịch vụ đối tác" time="0.004" classname="05ConsumerSideSmokeNewRequest"/>
+  </testsuite>
+  <testsuite name="06_Local_only_NonFunctional / New Request" id="8081a0a7-94d3-44b6-8a6b-19a67b16525d" timestamp="2026-06-17T17:45:22.817Z" tests="0" failures="0" errors="0" time="0.003"/>
+</testsuites>
